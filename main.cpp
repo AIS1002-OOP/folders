@@ -5,14 +5,6 @@
 #include <vector>
 #include <string>
 
-void loop(int i, int count, const std::function<void()>& f) {
-    if (i < count) {
-        f();
-        loop(++i, count, f);
-    }
-}
-
-
 class folder {
 
 public:
@@ -35,10 +27,21 @@ public:
         return children_.empty();
     }
 
+    [[nodiscard]] bool hasParent() const {
+        return parent_ != nullptr;
+    }
+
     void traverseUpwards(const std::function<void(folder*)>& f) {
         f(this);
-        if (parent_ != nullptr) {
+        if (hasParent()) {
             parent_->traverseUpwards(f);
+        }
+    }
+
+    void traverseDepthFirst(const std::function<void(folder*)>& f) {
+        f(this);
+        for (auto c : children_) {
+            c->traverseDepthFirst(f);
         }
     }
 
@@ -50,18 +53,35 @@ private:
 
 };
 
-
 int main() {
 
     folder c("C:");
+    folder left("left");
     folder bar("bar");
     folder baz("baz");
+    folder fubar("fubar");
+
+    c.add(left);
 
     c.add(bar);
     bar.add(baz);
+    bar.add(fubar);
+
+    folder f1("f1");
+    folder f2("f2");
+    folder f3("f3");
+
+    left.add(f1);
+    left.add(f2);
+    f2.add(f3);
 
     baz.traverseUpwards([](folder* f){
         std::cout << f->getName() << std::endl;
+    });
+
+    std::vector<folder*> collect;
+    c.traverseDepthFirst([&](folder* f){
+        collect.emplace_back(f);
     });
 
     return 0;
